@@ -53,7 +53,6 @@ BEGIN {
     $agent || die "No \$agent defined\n";
 }
 
-use feature ('switch');
 use NetSNMP::OID (':all');
 use NetSNMP::agent (':all');
 use NetSNMP::ASN (':all');
@@ -275,20 +274,18 @@ sub convert_value {
     }
 
     # Convert other values according to their data type in MIB
-    given ($oid_type{$oid}) {
-        when ([ASN_INTEGER]) {
-            return ($raw =~ /(\d+)/g)[0];
-        }
-        when ([ASN_GAUGE]) {
-            return ($raw =~ /(\d+(?:\.\d+)?)/g)[0];
-        }
-        when ([ASN_TIMETICKS]) {
-            my ($val, $unit) = ($raw =~ /(\d+(?:\.\d+)?)\s+(\w+)/g);
-            return &convert_time($val, $unit);
-        }
-        default { 
-            return $raw;
-        }
+    if ($oid_type{$oid} == ASN_INTEGER) {
+        return ($raw =~ /(\d+)/g)[0];
+    }
+    elsif ($oid_type{$oid} == ASN_GAUGE) {
+        return ($raw =~ /(\d+(?:\.\d+)?)/g)[0];
+    }
+    elsif ($oid_type{$oid} == ASN_TIMETICKS) {
+        my ($val, $unit) = ($raw =~ /(\d+(?:\.\d+)?)\s+(\w+)/g);
+        return &convert_time($val, $unit);
+    }
+    else { 
+        return $raw;
     }
 }
 
@@ -296,19 +293,17 @@ sub convert_value {
 sub convert_time {
     my ($val, $unit) = @_;
 
-    given ($unit) {
-        when (m/^seconds/i) { 
-            return $val * 100; 
-        }
-        when (m/^minutes/i) { 
-            return $val * 6000; 
-        }
-        when (m/^hours/i) { 
-            return $val * 360000; 
-        }
-        default {
-            return $val;
-        }
+    if ($unit == (m/^seconds/i)) { 
+        return $val * 100; 
+    }
+    elsif ($unit == (m/^minutes/i)) { 
+        return $val * 6000; 
+    }
+    elsif ($unit == (m/^hours/i)) { 
+        return $val * 360000; 
+    }
+    else {
+        return $val;
     }
 }
 
